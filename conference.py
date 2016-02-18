@@ -36,6 +36,10 @@ from models import ConferenceForms
 from models import ConferenceQueryForm
 from models import ConferenceQueryForms
 from models import TeeShirtSize
+#-------------- Add import directives for handling Sessions
+from models import Session
+from models import SessionForm
+#-------------- End import directives for handling Sessions
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -550,5 +554,28 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
 
+#--------------- Add endpoints to handle sessions
+
+    @endpoints.method()
+    def getConferenceSessions(self, request):
+        """Returns all sessions belonging to specific conference."""
+        # TODO - Add necessary parameters and logic to this method
+
+    @endpoints.method()
+    def getConferenceSessionsByType():
+        """Returns all sessions of a conference filtered by type."""
+        # TODO - Add necessary parameters and logic to this method
+
+    @endpoints.method()
+    def getSessionsBySpeaker():
+        """Give a speaker, return all sessions by speaker across conferences."""
+        # TODO - Add necessary parameters and logic to this method
+
+    @endpoints.method()
+    def createSession():
+        """Allows creation of a session. Open to conference organizer only."""
+        # TODO - Add necessary parameters and logic to this method
+
+#--------------- End endpoints to handle sessions
 
 api = endpoints.api_server([ConferenceApi]) # register API
