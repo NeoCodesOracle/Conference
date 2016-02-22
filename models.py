@@ -135,4 +135,8 @@ class SessionForm(messages.Message):
     maxAttendees    = messages.IntegerField(9, variant=messages.Variant.INT32)
     websafeKey      = messages.StringField(10) 
 
+class SessionForms(messages.Message):
+    """sessionForms -- Contains multiple Sessions in outbound form message"""
+    items = messages.MessageField(ConferenceForm, 1, repeated=True)
+
 #-------------- End class definitions for session objects
