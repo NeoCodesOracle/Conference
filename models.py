@@ -132,8 +132,9 @@ class SessionForm(messages.Message):
     date = messages.StringField(6)
     startTime = messages.StringField(7)
     organizerUserId = messages.StringField(8)
-    maxAttendees    = messages.IntegerField(9, variant=messages.Variant.INT32)
-    websafeKey      = messages.StringField(10) 
+    maxAttendees = messages.IntegerField(9, variant=messages.Variant.INT32)
+    websafeKey = messages.StringField(10)
+    organizerDisplayName = messages.StringField(11)
 
 class SessionForms(messages.Message):
     """sessionForms -- Contains multiple Sessions in outbound form message"""
