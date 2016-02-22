@@ -119,6 +119,7 @@ class Session(ndb.Model):
     typeOfSession = ndb.StringProperty()
     date = ndb.DateProperty()
     startTime = ndb.TimeProperty()
+    maxAttendees    = ndb.IntegerProperty()
     organizerUserId = ndb.StringProperty()
 
 class SessionForm(messages.Message):
@@ -131,5 +132,7 @@ class SessionForm(messages.Message):
     date = messages.StringField(6)
     startTime = messages.StringField(7)
     organizerUserId = messages.StringField(8)
+    maxAttendees    = messages.IntegerField(9, variant=messages.Variant.INT32)
+    websafeKey      = messages.StringField(10) 
 
 #-------------- End class definitions for session objects
