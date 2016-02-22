@@ -606,19 +606,21 @@ class ConferenceApi(remote.Service):
     		data['startTime'] = datetime.strptime(
     			data['startTime'][:5], "%H:%M").time()
 
-    	# generate Conference Key based on conference and Conference
-    	# ID based on Profile key get Conference key from ID
+    	# generate Conference Key based on conference id 
+    	# and Session key based on allocated session id
     	p_key = ndb.Key(Conference, target_conference.key.id())
     	s_id = Session.allocate_ids(size=1, parent=p_key)[0]
     	s_key = ndb.Key(Session, s_id, parent=p_key)
     	data['key'] = s_key
     	data['organizerUserId'] = user_id
+    	# our session model does not have a websafeKey property
+    	# and therefore must remove before saving data.
     	del data['websafeKey']
 
-    	# Take the data in dict and save it to create a session
+    	# Take the data in dict and save it to create a session.
     	Session(**data).put()
 
-    	# Send email to organizer confirming creation of Session
+    	# Send email to organizer confirming creation of Session.
     	taskqueue.add(params={'email': user.email(),
     		'sessionInfo': repr(request)}, url='/tasks/send_confirmation_email2')
 
