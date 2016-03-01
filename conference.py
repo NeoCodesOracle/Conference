@@ -38,10 +38,7 @@ from models import ConferenceQueryForms
 from models import TeeShirtSize
 from models import Session
 from models import SessionForm
-#-------------- Add import directives for handling Sessions
-from models import Session
-from models import SessionForm
-#-------------- End import directives for handling Sessions
+from models import SessionForms
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -556,98 +553,84 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
 
-#--------------- Session Objects ---------------#
+# --------------- Begin Session Object --------------- #
+
 
     def _createSessionObject(self, request):
-    	"""Creates a session from the form passed in the request"""
-    	# Begin request validation. Check for logged in user.
-    	user = endpoints.get_current_user()
-    	# If no user logged in, signal an error.
-    	if not user:
-    		raise endpoints.UnauthorizedException(
-    			"Error: login required.")
-    	# If you get this far user is logged in. Extract her user_id.
-    	user_id = getUserId(user)
+        """Create or update Session object, returning SessionForm/request."""
+        # check if user is logged in
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required.')
+        # if so, obtain her user_id
+        user_id = getUserId(user)
 
-    	# We need to make sure we have a conference key to look for conference
-    	if not request.websafeKey:
-    		raise endpoints.BadRequestException(
-    			"Error: websafeKey field is required.")
+        # since we require a session name, ensure it is present in submitted form
+        if not request.name:
+            raise endpoints.BadRequestException("Session 'name' field required.")
 
-    	# Session name is required, check to make sure it exists in request.
-    	if not request.name:
-    		raise endpoints.BadRequestException(
-    			"Error: session name field is required.")
+        # copy SessionForm/ProtoRPC Message into dict
+        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
 
-    	# Copy SessionForm/ProtoRPC Message into dict named data.
-    	data = {field.name: getattr(
-    		request, field.name) for field in request.all_fields()}
+        # use the user-provided string to retrieve target conference
+        conf_key = ndb.Key(urlsafe=request.websafeKey)
+        tg_conf = conf_key.get()
+        # check the conference exists
+        if not tg_conf:
+            raise endpoints.NotFoundException(
+                'The conference you requested does not exist.')
 
-    	# Retrieve the conference from user provided value.
-    	target_conference = ndb.Key(urlsafe=request.websafeKey).get()
+        # if the conference exists, ensure logged in user is 
+        # the owner of the conference in question
+        if user_id != tg_conf.organizerUserId:
+            raise endpoints.ForbiddenException(
+                'Only conference owner may add create a session.')
 
-    	# Make sure conference with provided key exists.
-    	if not target_conference:
-    		raise endpoints.NotFoundException(
-    			"Error: Conference does not exist: %s" % request.websafeKey)
+        # add default values for those missing (both data model & outbound Message)
+        for df in DEFAULTS:
+            if data[df] in (None, []):
+                data[df] = DEFAULTS[df]
+                setattr(request, df, DEFAULTS[df])
 
-    	# Check if logged in user is the same as conference owner.
-    	if user_id != target_conference.organizerUserId:
-    		raise endpoints.ForbiddenException(
-    			"Error: Only owner of this conference may add a session.")
+        # convert dates from strings to Date objects; set month based on start_date
+        if data['startDate']:
+            data['startDate'] = datetime.strptime(data['startDate'][:10], "%Y-%m-%d").date()
+            data['month'] = data['startDate'].month
+        else:
+            data['month'] = 0
+        if data['endDate']:
+            data['endDate'] = datetime.strptime(data['endDate'][:10], "%Y-%m-%d").date()
 
-    	# Convert date strings in request to actual Date Objects.
-    	if data['date']:
-    		data['date'] = datetime.strptime(
-    			data['startDate'][:10], "%Y-%m-%d").date()
+        # set seatsAvailable to be same as maxAttendees on creation
+        if data["maxAttendees"] > 0:
+            data["seatsAvailable"] = data["maxAttendees"]
+        # generate Conference parent key from user-provided string
+        # allocate session id using using p_key as parent
+        p_key = ndb.Key(Conference, conf_key.urlsafe())
+        sess_id = Session.allocate_ids(size=1, parent=p_key)[0]
+        sess_key = ndb.Key(Session, sess_id, parent=p_key)
+        data['key'] = sess_key
+        data['organizerUserId'] = request.organizerUserId = user_id
 
-    	# Convert time strings in request to actual Time Objects.
-    	if data['startTime']:
-    		data['startTime'] = datetime.strptime(
-    			data['startTime'][:5], "%H:%M").time()
+        # Remove fields not found in our session object
+        del data['websafeKey']
+        del data['organizerDisplayName']        
 
-    	# generate Conference Key based on conference id 
-    	# and Session key based on allocated session id
-    	p_key = ndb.Key(Conference, target_conference.key.id())
-    	s_id = Session.allocate_ids(size=1, parent=p_key)[0]
-    	s_key = ndb.Key(Session, s_id, parent=p_key)
-    	data['key'] = s_key
-    	data['organizerUserId'] = user_id
-    	# our session model does not have a websafeKey property
-    	# and therefore must remove before saving data.
-    	del data['websafeKey']
-
-    	# Take the data in dict and save it to create a session.
-    	Session(**data).put()
-
-    	# Send email to organizer confirming creation of Session.
-    	taskqueue.add(params={'email': user.email(),
-    		'sessionInfo': repr(request)}, url='/tasks/send_confirmation_email2')
-
-    	# Return modified form
-    	return request
+        # create session, send email to organizer confirming
+        # creation of session & return (modified) SessionForm
+        Session(**data).put()
+        taskqueue.add(params={'email': user.email(),
+            'conferenceInfo': repr(request)},
+            url='/tasks/send_confirmation_email'
+        )
+        return request
 
     @endpoints.method(SessionForm, SessionForm, path='session',
             http_method='POST', name='createSession')
-    def createConference(self, request):
-        """Create new conference."""
-        return self._createSessionObject(request)    
+    def createSession(self, request):
+        """Create new session."""
+        return self._createSessionObject(request) 
 
-    @endpoints.method()
-    def getConferenceSessions(self, request):
-        """Returns all sessions belonging to specific conference."""
-        # TODO - Add necessary parameters and logic to this method
 
-    @endpoints.method()
-    def getConferenceSessionsByType():
-        """Returns all sessions of a conference filtered by type."""
-        # TODO - Add necessary parameters and logic to this method
-
-    @endpoints.method()
-    def getSessionsBySpeaker():
-        """Give a speaker, return all sessions by speaker across conferences."""
-        # TODO - Add necessary parameters and logic to this method
-
-#--------------- Session Objects ---------------#
 
 api = endpoints.api_server([ConferenceApi]) # register API
