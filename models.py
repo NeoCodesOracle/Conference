@@ -25,6 +25,33 @@ class Profile(ndb.Model):
     """Profile -- User profile object"""
     displayName = ndb.StringProperty()
     mainEmail = ndb.StringProperty()
+    teeShirtSize = ndb.StringProperty#!/usr/bin/env python
+
+"""models.py
+
+Udacity conference server-side Python App Engine data & ProtoRPC models
+
+$Id: models.py,v 1.1 2014/05/24 22:01:10 wesc Exp $
+
+created/forked from conferences.py by wesc on 2014 may 24
+
+"""
+
+__author__ = 'wesc+api@google.com (Wesley Chun)'
+
+import httplib
+import endpoints
+from protorpc import messages
+from google.appengine.ext import ndb
+
+class ConflictException(endpoints.ServiceException):
+    """ConflictException -- exception mapped to HTTP 409 response"""
+    http_status = httplib.CONFLICT
+
+class Profile(ndb.Model):
+    """Profile -- User profile object"""
+    displayName = ndb.StringProperty()
+    mainEmail = ndb.StringProperty()
     teeShirtSize = ndb.StringProperty(default='NOT_SPECIFIED')
     conferenceKeysToAttend = ndb.StringProperty(repeated=True)
 
@@ -138,4 +165,4 @@ class SessionForm(messages.Message):
 
 class SessionForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
-    items = messages.MessageField(ConferenceForm, 1, repeated=True)
+    items = messages.MessageField(SessionForm, 1, repeated=True)

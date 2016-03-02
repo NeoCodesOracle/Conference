@@ -87,6 +87,11 @@ CONF_POST_REQUEST = endpoints.ResourceContainer(
     websafeConferenceKey=messages.StringField(1),
 )
 
+SESS_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeConferenceKey=messages.StringField(1),
+)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -555,6 +560,22 @@ class ConferenceApi(remote.Service):
 
 # --------------- Begin Session Object --------------- #
 
+    def _copySessionToForm(self, sess):
+        """Copy relevant fields from Session to SessionForm."""
+        sf = SessionForm()
+        for field in sf.all_fields():
+            if hasattr(sess, field.name):
+                # convert Date to date string; just copy others
+                if field.name.endswith('Date'):
+                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                else:
+                    setattr(sf, field.name, getattr(sess, field.name))
+            elif field.name == "websafeKey":
+                setattr(sf, field.name, sess.key.urlsafe())
+        # make sure all required form fields are filled out and return
+        sf.check_initialized()
+        return sf
+
 
     def _createSessionObject(self, request):
         """Create or update Session object, returning SessionForm/request."""
@@ -625,11 +646,38 @@ class ConferenceApi(remote.Service):
         )
         return request
 
+
     @endpoints.method(SessionForm, SessionForm, path='session',
             http_method='POST', name='createSession')
     def createSession(self, request):
-        """Create new session."""
-        return self._createSessionObject(request) 
+        """Create new session as a child of provided websafekey."""
+        return self._createSessionObject(request)
+
+
+    @endpoints.method(SESS_GET_REQUEST, SessionForms,
+            path='getConferenceSessions/{websafeConferenceKey}',
+            http_method='POST', name='getConferenceSessions')
+    def getConferenceSessions(self, request):
+        """Return all sessions belonging to conference matching websafekey."""
+        # make sure user is authed
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        # use the user-provided string to retrieve target conference
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
+        # check the conference exists
+        if not conf:
+            raise endpoints.NotFoundException(
+                'The conference you requested does not exist.')
+
+        # create ancestor query for all key matches for this conference
+        sess_query = Session.query(
+            ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        # return set of SessionForm objects per Session
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sess_query]
+        )
 
 
 
