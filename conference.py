@@ -92,6 +92,12 @@ SESS_GET_REQUEST = endpoints.ResourceContainer(
     websafeConferenceKey=messages.StringField(1),
 )
 
+SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeConferenceKey=messages.StringField(1),
+    sessionType=messages.StringField(2),
+)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -673,7 +679,35 @@ class ConferenceApi(remote.Service):
 
         # create ancestor query for all key matches for this conference
         sess_query = Session.query(
+        	ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        # return set of SessionForm objects per Session
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sess_query]
+        )
+
+    @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
+            path='getConferenceSessionByType/{websafeConferenceKey}/{sessionType}',
+            http_method='POST', name='getConferenceSessionByType')
+    def getConferenceSessionByType(self, request):
+        """Return all sessions matching Websafekey and specified type."""
+        # make sure user is authed
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        # use the user-provided string to retrieve target conference
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
+        # check the conference exists
+        if not conf:
+            raise endpoints.NotFoundException(
+                'The conference you requested does not exist.')
+
+        # create ancestor query for all key matches for this conference
+        sess_query = Session.query(
             ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+        # now filter results by session type
+        sess_query = sess_query.filter(
+            Session.sessionType == request.sessionType)
         # return set of SessionForm objects per Session
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sess_query]

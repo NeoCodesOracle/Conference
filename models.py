@@ -25,33 +25,6 @@ class Profile(ndb.Model):
     """Profile -- User profile object"""
     displayName = ndb.StringProperty()
     mainEmail = ndb.StringProperty()
-    teeShirtSize = ndb.StringProperty#!/usr/bin/env python
-
-"""models.py
-
-Udacity conference server-side Python App Engine data & ProtoRPC models
-
-$Id: models.py,v 1.1 2014/05/24 22:01:10 wesc Exp $
-
-created/forked from conferences.py by wesc on 2014 may 24
-
-"""
-
-__author__ = 'wesc+api@google.com (Wesley Chun)'
-
-import httplib
-import endpoints
-from protorpc import messages
-from google.appengine.ext import ndb
-
-class ConflictException(endpoints.ServiceException):
-    """ConflictException -- exception mapped to HTTP 409 response"""
-    http_status = httplib.CONFLICT
-
-class Profile(ndb.Model):
-    """Profile -- User profile object"""
-    displayName = ndb.StringProperty()
-    mainEmail = ndb.StringProperty()
     teeShirtSize = ndb.StringProperty(default='NOT_SPECIFIED')
     conferenceKeysToAttend = ndb.StringProperty(repeated=True)
 
@@ -139,29 +112,35 @@ class Session(ndb.Model):
     """Conference -- Conference object"""
     name            = ndb.StringProperty(required=True)
     description     = ndb.StringProperty()
+    sessionType     = ndb.StringProperty()
     organizerUserId = ndb.StringProperty()
-    topics          = ndb.StringProperty(repeated=True)
     city            = ndb.StringProperty()
+    topics          = ndb.StringProperty(repeated=True)
+    highlights      = ndb.StringProperty(repeated=True)
     startDate       = ndb.DateProperty()
+    duration        = ndb.IntegerProperty()    
     month           = ndb.IntegerProperty() # TODO: do we need for indexing like Java?
-    endDate         = ndb.DateProperty()
     maxAttendees    = ndb.IntegerProperty()
     seatsAvailable  = ndb.IntegerProperty()
+    endDate         = ndb.DateProperty()    
 
 class SessionForm(messages.Message):
     """SessionForm -- Form used for transmittal of session information."""
     name            = messages.StringField(1)
     description     = messages.StringField(2)
-    organizerUserId = messages.StringField(3)
-    topics          = messages.StringField(4, repeated=True)
+    sessionType     = messages.StringField(3)
+    organizerUserId = messages.StringField(4)
     city            = messages.StringField(5)
-    startDate       = messages.StringField(6) #DateTimeField()
-    month           = messages.IntegerField(7, variant=messages.Variant.INT32)
-    maxAttendees    = messages.IntegerField(8, variant=messages.Variant.INT32)
-    seatsAvailable  = messages.IntegerField(9, variant=messages.Variant.INT32)
-    endDate         = messages.StringField(10) #DateTimeField()
-    websafeKey      = messages.StringField(11, required=True)
-    organizerDisplayName = messages.StringField(12)
+    topics          = messages.StringField(6, repeated=True)
+    highlights      = messages.StringField(7, repeated=True)
+    startDate       = messages.StringField(8) #DateTimeField()
+    duration        = messages.IntegerField(9, variant=messages.Variant.INT32)    
+    month           = messages.IntegerField(10, variant=messages.Variant.INT32)
+    maxAttendees    = messages.IntegerField(11, variant=messages.Variant.INT32)
+    seatsAvailable  = messages.IntegerField(12, variant=messages.Variant.INT32)
+    endDate         = messages.StringField(13) #DateTimeField()
+    websafeKey      = messages.StringField(14, required=True)
+    organizerDisplayName = messages.StringField(15)
 
 class SessionForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
