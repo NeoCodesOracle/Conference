@@ -39,6 +39,8 @@ from models import TeeShirtSize
 from models import Session
 from models import SessionForm
 from models import SessionForms
+from models import Speaker
+from models import SpeakerForm
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -59,6 +61,10 @@ DEFAULTS = {
     "maxAttendees": 0,
     "seatsAvailable": 0,
     "topics": [ "Default", "Topic" ],
+}
+
+SPKR_DEFAULTS = {
+    "sessionsToSpeakAt" : ["Default", "Session"],
 }
 
 OPERATORS = {
@@ -96,6 +102,13 @@ SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     websafeConferenceKey=messages.StringField(1),
     sessionType=messages.StringField(2),
+)
+
+SPKR_POST_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    name=messages.StringField(1),
+    mainEmail=messages.StringField(2),
+    sessionsToSpeakAt=messages.StringField(3),
 )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -337,8 +350,8 @@ class ConferenceApi(remote.Service):
 
         # return individual ConferenceForm object per Conference
         return ConferenceForms(
-                items=[self._copyConferenceToForm(conf, names[conf.organizerUserId]) for conf in \
-                conferences]
+                items=[self._copyConferenceToForm(
+                    conf, names[conf.organizerUserId]) for conf in conferences]
         )
 
 
@@ -563,6 +576,25 @@ class ConferenceApi(remote.Service):
         return ConferenceForms(
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
+
+# --------------- Begin Speaker  Object --------------- #
+
+    @endpoints.method(SpeakerForm, SpeakerForm, path='speaker',
+            http_method='POST', name='createSpeaker')
+    def createSpeaker(self, request):
+        """Create a speaker object."""
+        # copy SpeakerForm/ProtoRPC Message into dict
+        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
+
+        # add default values for those missing (both data model & outbound Message)
+        for df in SPKR_DEFAULTS:
+            if data[df] in (None, []):
+                data[df] = SPKR_DEFAULTS[df]
+                setattr(request, df, SPKR_DEFAULTS[df])
+        Speaker(**data).put()
+
+        return request
+
 
 # --------------- Begin Session Object --------------- #
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""models.py
+"""
+models.py
 
 Udacity conference server-side Python App Engine data & ProtoRPC models
 
@@ -109,8 +110,9 @@ class ConferenceQueryForms(messages.Message):
     filters = messages.MessageField(ConferenceQueryForm, 1, repeated=True)
 
 class Session(ndb.Model):
-    """Conference -- Conference object"""
+    """session -- Session object"""
     name            = ndb.StringProperty(required=True)
+    speaker         = ndb.StringProperty()
     description     = ndb.StringProperty()
     sessionType     = ndb.StringProperty()
     organizerUserId = ndb.StringProperty()
@@ -126,22 +128,35 @@ class Session(ndb.Model):
 
 class SessionForm(messages.Message):
     """SessionForm -- Form used for transmittal of session information."""
-    name            = messages.StringField(1)
-    description     = messages.StringField(2)
-    sessionType     = messages.StringField(3)
-    organizerUserId = messages.StringField(4)
-    city            = messages.StringField(5)
-    topics          = messages.StringField(6, repeated=True)
-    highlights      = messages.StringField(7, repeated=True)
-    startDate       = messages.StringField(8) #DateTimeField()
-    duration        = messages.IntegerField(9, variant=messages.Variant.INT32)    
-    month           = messages.IntegerField(10, variant=messages.Variant.INT32)
-    maxAttendees    = messages.IntegerField(11, variant=messages.Variant.INT32)
-    seatsAvailable  = messages.IntegerField(12, variant=messages.Variant.INT32)
-    endDate         = messages.StringField(13) #DateTimeField()
-    websafeKey      = messages.StringField(14, required=True)
-    organizerDisplayName = messages.StringField(15)
+    name            = messages.StringField(1, required=True)
+    speaker         = messages.StringField(2)
+    description     = messages.StringField(3)
+    sessionType     = messages.StringField(4)
+    organizerUserId = messages.StringField(5)
+    city            = messages.StringField(6)
+    topics          = messages.StringField(7, repeated=True)
+    highlights      = messages.StringField(8, repeated=True)
+    startDate       = messages.StringField(9) #DateTimeField()
+    duration        = messages.IntegerField(10, variant=messages.Variant.INT32)    
+    month           = messages.IntegerField(11, variant=messages.Variant.INT32)
+    maxAttendees    = messages.IntegerField(12, variant=messages.Variant.INT32)
+    seatsAvailable  = messages.IntegerField(13, variant=messages.Variant.INT32)
+    endDate         = messages.StringField(14) #DateTimeField()
+    websafeKey      = messages.StringField(15, required=True)
+    organizerDisplayName = messages.StringField(16)
 
 class SessionForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
     items = messages.MessageField(SessionForm, 1, repeated=True)
+
+class Speaker(ndb.Model):
+    """Speaker -- Spekaer object."""
+    name = ndb.StringProperty(required=True)
+    mainEmail = ndb.StringProperty(required=True)
+    sessionsToSpeakAt = ndb.StringProperty(repeated=True)
+
+class SpeakerForm(messages.Message):
+    """Speaker -- Spekaer object."""
+    name = messages.StringField(1, required=True)
+    mainEmail = messages.StringField(2, required=True)
+    sessionsToSpeakAt = messages.StringField(3, repeated=True)
