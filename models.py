@@ -109,6 +109,11 @@ class ConferenceQueryForms(messages.Message):
     """ConferenceQueryForms -- multiple ConferenceQueryForm inbound form message"""
     filters = messages.MessageField(ConferenceQueryForm, 1, repeated=True)
 
+class Speaker(ndb.Model):
+    """Speaker -- Speaker object."""
+    name = ndb.StringProperty(required=True)
+    mainEmail = ndb.StringProperty(required=True)
+
 class Session(ndb.Model):
     """session -- Session object"""
     name            = ndb.StringProperty(required=True)
@@ -149,14 +154,9 @@ class SessionForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
     items = messages.MessageField(SessionForm, 1, repeated=True)
 
-class Speaker(ndb.Model):
-    """Speaker -- Spekaer object."""
-    name = ndb.StringProperty(required=True)
-    mainEmail = ndb.StringProperty(required=True)
-    sessionsToSpeakAt = ndb.StringProperty(repeated=True)
-
-class SpeakerForm(messages.Message):
-    """Speaker -- Spekaer object."""
-    name = messages.StringField(1, required=True)
-    mainEmail = messages.StringField(2, required=True)
-    sessionsToSpeakAt = messages.StringField(3, repeated=True)
+#class SpeakerForm(messages.Message):
+#    """SpeakerForm -- form for transmittal of object information."""
+#    name = messages.StringField(1, required=True)
+#    mainEmail = messages.StringField(2, required=True)
+#    sessionsToSpeakAt = messages.StringField(3, repeated=True)
+ 

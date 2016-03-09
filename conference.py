@@ -39,8 +39,8 @@ from models import TeeShirtSize
 from models import Session
 from models import SessionForm
 from models import SessionForms
-from models import Speaker
-from models import SpeakerForm
+#from models import Speaker
+#from models import SpeakerForm
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -104,11 +104,15 @@ SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
     sessionType=messages.StringField(2),
 )
 
+SESS_GET_BY_SPEAKER = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    speakerName=messages.StringField(1),
+)
+
 SPKR_POST_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
-    name=messages.StringField(1),
-    mainEmail=messages.StringField(2),
-    sessionsToSpeakAt=messages.StringField(3),
+    websafeKey=messages.StringField(1),
+    speaker=messages.StringField(2),
 )
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -537,8 +541,8 @@ class ConferenceApi(remote.Service):
             names[profile.key.id()] = profile.displayName
 
         # return set of ConferenceForm objects per Conference
-        return ConferenceForms(items=[self._copyConferenceToForm(conf, names[conf.organizerUserId])\
-         for conf in conferences]
+        return ConferenceForms(items=[self._copyConferenceToForm(
+            conf, names[conf.organizerUserId]) for conf in conferences]
         )
 
 
@@ -577,23 +581,29 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
 
+#TODO - COME BACK TO THIS LATER
 # --------------- Begin Speaker  Object --------------- #
 
-    @endpoints.method(SpeakerForm, SpeakerForm, path='speaker',
-            http_method='POST', name='createSpeaker')
-    def createSpeaker(self, request):
-        """Create a speaker object."""
-        # copy SpeakerForm/ProtoRPC Message into dict
-        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
-
-        # add default values for those missing (both data model & outbound Message)
-        for df in SPKR_DEFAULTS:
-            if data[df] in (None, []):
-                data[df] = SPKR_DEFAULTS[df]
-                setattr(request, df, SPKR_DEFAULTS[df])
-        Speaker(**data).put()
-
-        return request
+#    @endpoints.method(SpeakerForm, SpeakerForm, path='speaker',
+#            http_method='POST', name='createSpeaker')
+#   def createSpeaker(self, request):
+#        """Create a speaker object."""
+#       spkr = Speaker.query()
+#
+#        # check if speaker already exists
+#
+#        #
+#        # copy SpeakerForm/ProtoRPC Message into dict
+#        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
+#
+#        # add default values for those missing (both data model & outbound Message)
+#        for df in SPKR_DEFAULTS:
+#            if data[df] in (None, []):
+#                data[df] = SPKR_DEFAULTS[df]
+#                setattr(request, df, SPKR_DEFAULTS[df])
+#        Speaker(**data).put()
+#
+#        return request
 
 
 # --------------- Begin Session Object --------------- #
@@ -745,6 +755,52 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sess_query]
         )
 
+    @endpoints.method(SESS_GET_BY_SPEAKER, SessionForms,
+            path='getSessionsBySpeaker/{speakerName}',
+            http_method='GET', name='getSessionsBySpeaker')
+    def getSessionsBySpeaker(self, request):
+        """Return all sessions matching specified speaker."""
+        # make sure user is authed
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
 
+        sess_query = Session.query(Session.speaker == request.speakerName)
+        # return set of SessionForm objects per Session
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sess_query]
+        )
+
+#TODO
+### ------ COME BACK TO THIS LATER
+
+    @endpoints.method(SPKR_POST_REQUEST, BooleanMessage,
+            path='addSpeakerToSession/{websafeKey}/{speaker}',
+            http_method='POST', name='addSpeakerToSession')
+    def addSpeakerToSession(self, request):
+        """Adds a speaker to the session with given websafeConferenceKey"""
+        # function will return true is successful, false otherwise
+        retval = None
+
+        # make sure user is authed
+        user = endpoints.get_current_user()
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+
+        # use the user-provided string to retrieve target conference
+        sess = ndb.Key(urlsafe=request.websafeKey).get()
+        # check the session exists
+        if not sess:
+            raise endpoints.NotFoundException(
+                'The session you requested does not exist.')
+
+        # if it exists, add speaker to session and return true
+        sess.speaker = request.speaker
+        sess.put()
+        retval = True
+
+        return BooleanMessage(data=retval)
+
+### ------ COME BACK TO THIS LATER
 
 api = endpoints.api_server([ConferenceApi]) # register API
