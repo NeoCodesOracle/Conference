@@ -581,7 +581,7 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
 
-#TODO - COME BACK TO THIS LATER
+#TODO -- COME BACK TO THIS LATER
 # --------------- Begin Speaker  Object --------------- #
 
 #    @endpoints.method(SpeakerForm, SpeakerForm, path='speaker',
@@ -771,8 +771,60 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sess_query]
         )
 
-#TODO
-### ------ COME BACK TO THIS LATER
+
+    @ndb.transactional(xg=True)
+    @endpoints.method(SESS_GET_REQUEST, BooleanMessage,
+            path='addSessionToWishlist/{websafeConferenceKey}',
+            http_method='GET', name='addSessionToWishlist')    
+    def addSessionToWishlist(self, request, reg=True):
+        """Add session with webSafeKey to wish list."""
+        retval = None
+        prof = self._getProfileFromUser() # get user Profile
+
+        # check if conf exists given websafeConfKey
+        # get conference; check that it exists
+        wsck = request.websafeConferenceKey
+        sess = ndb.Key(urlsafe=wsck).get()
+        if not sess:
+            raise endpoints.NotFoundException(
+                'No session found with key: %s' % wsck)
+
+        # register
+        if reg:
+            # check if user already registered otherwise add
+            if wsck in prof.wishList:
+                raise ConflictException(
+                    "You have already added this session to your list.")
+
+            # check if seats avail
+            if sess.seatsAvailable <= 0:
+                raise ConflictException(
+                    "There are no seats available.")
+
+            # register user, take away one seat
+            prof.wishList.append(wsck)
+            sess.seatsAvailable -= 1
+            retval = True
+
+        # unregister
+        else:
+            # check if user already registered
+            if wsck in prof.wishList:
+
+                # unregister user, add back one seat
+                prof.wishList.remove(wsck)
+                sess.seatsAvailable += 1
+                retval = True
+            else:
+                retval = False
+
+        # write things back to the datastore & return
+        prof.put()
+        sess.put()
+        return BooleanMessage(data=retval)
+
+
+#TODO -- ------ COME BACK TO THIS LATER
 
     @endpoints.method(SPKR_POST_REQUEST, BooleanMessage,
             path='addSpeakerToSession/{websafeKey}/{speaker}',
