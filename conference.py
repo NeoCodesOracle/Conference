@@ -824,6 +824,22 @@ class ConferenceApi(remote.Service):
         return BooleanMessage(data=retval)
 
 
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+            path='sessions/attending',
+            http_method='GET', name='getSessionsInWishList')
+    def getSessionsInWishList(self, request):
+        """Get list of sessions that user has interest in."""
+        # get user Profile
+        prof = self._getProfileFromUser()
+        # get stored keys of sessions interested in
+        sess_keys = [ndb.Key(urlsafe=wsck) for wsck in prof.wishList]
+        #fetch multiple sessions at once
+        sessions = ndb.get_multi(sess_keys)
+
+        # return set of Session objects per each session
+        return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
+
+
 #TODO -- ------ COME BACK TO THIS LATER
 
     @endpoints.method(SPKR_POST_REQUEST, BooleanMessage,
