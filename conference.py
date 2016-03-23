@@ -802,7 +802,10 @@ class ConferenceApi(remote.Service):
         # register user, take away one seat
         prof.wishList.append(wsck)
         sess.seatsAvailable -= 1
+        prof.put()
         retval = True
+
+        return BooleanMessage(data=retval)
 
 
     @endpoints.method(message_types.VoidMessage, SessionForms,
@@ -819,6 +822,8 @@ class ConferenceApi(remote.Service):
 
         # return set of Session objects per each session
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
+
+
 
 
     @endpoints.method(SPKR_POST_REQUEST, BooleanMessage,
