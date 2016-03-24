@@ -98,6 +98,11 @@ SESS_GET_REQUEST = endpoints.ResourceContainer(
     websafeConferenceKey=messages.StringField(1),
 )
 
+SESS_POST_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    webSafeKey=messages.StringField(1),
+)
+
 SESS_TYPE_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
     websafeConferenceKey=messages.StringField(1),
@@ -777,7 +782,7 @@ class ConferenceApi(remote.Service):
     @ndb.transactional(xg=True)
     @endpoints.method(SESS_GET_REQUEST, BooleanMessage,
             path='addSessionToWishlist/{websafeConferenceKey}',
-            http_method='GET', name='addSessionToWishlist')    
+            http_method='GET', name='addSessionToWishlist')
     def addSessionToWishlist(self, request):
         """Add session with webSafeKey to wish list."""
         retval = None
@@ -809,10 +814,10 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(message_types.VoidMessage, SessionForms,
-            path='sessions/attending',
+            path='getSessionsInWishList/attending',
             http_method='GET', name='getSessionsInWishList')
     def getSessionsInWishList(self, request):
-        """Get list of sessions that user has interest in."""
+        """Get list of sessions that user has interest in"""
         # get user Profile
         prof = self._getProfileFromUser()
         # get stored keys of sessions interested in
@@ -824,6 +829,32 @@ class ConferenceApi(remote.Service):
         return SessionForms(items=[self._copySessionToForm(sess) for sess in sessions])
 
 
+    @endpoints.method(SESS_POST_REQUEST, BooleanMessage,
+            path='deleteSessionInWishList/{webSafeKey}',
+            http_method='POST', name='deleteSessionInWishList')
+    def deleteSessionInWishList(self, request):
+        """Remove a session from the user's wishlist"""
+        retval = None
+        prof = self._getProfileFromUser() # get user Profile
+
+        # check if conf exists given websafeConfKey
+        wsck = request.webSafeKey
+        sess = ndb.Key(urlsafe=wsck).get()
+        if not sess:
+            raise endpoints.NotFoundException(
+                'No session found with key: %s' % wsck)
+
+        # check if user already registered
+        if wsck in prof.wishList:
+            # unregister user, add back one seat
+            prof.wishList.remove(wsck)
+            sess.seatsAvailable += 1
+            prof.put()
+            retval = True
+        else:
+            retval = False
+
+        return BooleanMessage(data=retval)
 
 
     @endpoints.method(SPKR_POST_REQUEST, BooleanMessage,
@@ -852,7 +883,6 @@ class ConferenceApi(remote.Service):
         retval = True
 
         return BooleanMessage(data=retval)
-
 
 
 api = endpoints.api_server([ConferenceApi]) # register API
