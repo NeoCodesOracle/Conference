@@ -733,6 +733,19 @@ class ConferenceApi(remote.Service):
         )
 
 
+    @endpoints.method(message_types.VoidMessage, SessionForms,
+            path='sessions/getAllExistingSessions',
+            http_method='GET', name='getAllExistingSessions')
+    def getAllExistingSessions(self, request):
+        """Return ALL existing sessions, independently of conference ancestors"""
+        q = Session.query()
+        q.fetch() # query and return all sessions
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in q]
+        )
+
+
     @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
             path='getConferenceSessionByType/{websafeConferenceKey}/{sessionType}',
             http_method='POST', name='getConferenceSessionByType')
