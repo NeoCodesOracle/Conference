@@ -120,6 +120,11 @@ SPKR_POST_REQUEST = endpoints.ResourceContainer(
     speaker=messages.StringField(2),
 )
 
+SESS_SIZE_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    sessionSize=messages.IntegerField(1),
+)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -745,6 +750,19 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in q]
         )
 
+
+    @endpoints.method(SESS_SIZE_REQUEST, SessionForms,
+            path='sessions/getSessionsBySize',
+            http_method='GET', name='getSessionsBySize')
+    def getSessionsBySize(self, request):
+        """Return ALL existing sessions by size independently
+        	of conference ancestors"""
+        # create query
+        query = Session.query().filter(Session.maxAttendees <= request.sessionSize)
+
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in query]
+        )
 
     @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
             path='getConferenceSessionByType/{websafeConferenceKey}/{sessionType}',

@@ -156,6 +156,7 @@ class SessionForms(messages.Message):
     """ConferenceForms -- multiple Conference outbound form message"""
     items = messages.MessageField(SessionForm, 1, repeated=True)
 
+
 #class SpeakerForm(messages.Message):
 #    """SpeakerForm -- form for transmittal of object information."""
 #    name = messages.StringField(1, required=True)
