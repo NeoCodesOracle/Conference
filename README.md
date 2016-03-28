@@ -1,6 +1,6 @@
-#Conference Organization - App Engine application for the Udacity training course.
+##Conference Organization - App Engine application for the Udacity training course.
 
-##Task 1 - Design Implementation
+###Task 1 - Design Implementation
 
 In order to complete the first task, adding the four endpoint methods to the API, we needed to define the session class. The session class is the data structure that holds all the information pertaining to our sessions, i.e. name, seats available, date, duration, highlights, etc. The four endpoint methods we were responsible for were as follows: 
 
@@ -9,28 +9,31 @@ In order to complete the first task, adding the four endpoint methods to the API
 1.  **getSessionsBySpeaker(speaker)** -Returns all sessions that contain matching speaker as specified by speaker argument. (Will return to this later to implement speaker as an identity).
 1.  **createSession(sessionForm, websafeConferenceKey)** - Given a form with session information and a websafeConferenceKey, it creates a session that is a child of conference of given websafeKey.
 
-##Task 2 - Add Sessions to User Wishlist
+###Task 2 - Add Sessions to User Wishlist
 
-The user wishlist was modeled after the conference registration procedure. This avoids having to make calls to datastore to retrieve entities.
+Users should be able to mark some sessions that they are interested in and retrieve their own current wishlist. We were free to design the way this wishlist is stored. Define the following Endpoints methods:
 
-##Task 3 - Indexes and Queries
+1. **addSessionToWishlist(SessionKey)** -- adds the session to the user's list of sessions they are interested in attending.You can decide if they can only add conference they have registered to attend or if the wishlist is open to all conferences.  
+1. **getSessionsInWishlist()** -- query for all the sessions in a conference that the user is interested in  
+1. **deleteSessionInWishlist(SessionKey)** -- removes the session from the user’s list of sessions they are interested in attending
+
+
+###Task 3 -Work on Indexes and Queries
+
+Make sure the indexes support the type of queries required by the new Endpoints methods.
+Come up with 2 additional queries
+
+Think about other types of queries that would be useful for this application. Describe the purpose of 2 new queries and write the code that would perform them.
+Solve the following query related problem
+
+Let’s say that you don't like workshops and you don't like sessions after 7 pm. How would you handle a query for all non-workshop sessions before 7 pm? What is the problem for implementing this query? What ways to solve it did you think of?
+
+###Task 4 - Add Sessions to User Wishlist
 
 TO BE COMPLETED
 
-##Task 4 - Add Sessions to User Wishlist
 
-TO BE COMPLETED
-
-## Products
-- [App Engine][1]
-
-## Language
-- [Python][2]
-
-## APIs
-- [Google Cloud Endpoints][3]
-
-## Setup Instructions
+### Setup Instructions
 1. Update the value of `application` in `app.yaml` to the app ID you
    have registered in the App Engine admin console and would like to use to host
    your instance of this sample.
@@ -42,7 +45,7 @@ TO BE COMPLETED
    `$ git update-index --assume-unchanged app.yaml settings.py static/js/app.js`
 1. Run the app with the devserver using `dev_appserver.py DIR`, and ensure it's running by visiting your local server's address (by default [localhost:8080][5].)
 1. (Optional) Generate your client library(ies) with [the endpoints tool][6].
-1. Deploy your application.
+1.  Go to localhost:8080/_ah/api/explorer to test the endpoints for this application
 
 
 [1]: https://developers.google.com/appengine
