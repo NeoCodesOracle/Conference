@@ -752,7 +752,7 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SESS_SIZE_REQUEST, SessionForms,
-            path='sessions/getSessionsBySize',
+            path='sessions/getSessionsBySize/{sessionSize}',
             http_method='GET', name='getSessionsBySize')
     def getSessionsBySize(self, request):
         """Return ALL existing sessions by size independently
