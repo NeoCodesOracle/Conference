@@ -39,8 +39,6 @@ from models import TeeShirtSize
 from models import Session
 from models import SessionForm
 from models import SessionForms
-#from models import Speaker
-#from models import SpeakerForm
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -591,30 +589,6 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, "") for conf in q]
         )
 
-#TODO -- COME BACK TO THIS LATER
-# --------------- Begin Speaker  Object --------------- #
-
-#    @endpoints.method(SpeakerForm, SpeakerForm, path='speaker',
-#            http_method='POST', name='createSpeaker')
-#   def createSpeaker(self, request):
-#        """Create a speaker object."""
-#       spkr = Speaker.query()
-#
-#        # check if speaker already exists
-#
-#        #
-#        # copy SpeakerForm/ProtoRPC Message into dict
-#        data = {field.name: getattr(request, field.name) for field in request.all_fields()}
-#
-#        # add default values for those missing (both data model & outbound Message)
-#        for df in SPKR_DEFAULTS:
-#            if data[df] in (None, []):
-#                data[df] = SPKR_DEFAULTS[df]
-#                setattr(request, df, SPKR_DEFAULTS[df])
-#        Speaker(**data).put()
-#
-#        return request
-
 
 # --------------- Begin Session Object --------------- #
 
@@ -763,6 +737,7 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in query]
         )
+
 
     @endpoints.method(SESS_TYPE_GET_REQUEST, SessionForms,
             path='getConferenceSessionByType/{websafeConferenceKey}/{sessionType}',

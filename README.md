@@ -73,7 +73,7 @@ When a new session is added to a conference, check the speaker. If there is more
 The logic above should be handled using App Engine's Task Queue.
 Define the following Endpoints method
 
-getFeaturedSpeaker()
+getFeaturedSpeaker() - 
 TO BE COMPLETED
 
 
