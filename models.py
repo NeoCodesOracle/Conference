@@ -119,7 +119,7 @@ class Speaker(ndb.Model):
 class Session(ndb.Model):
     """session -- Session object"""
     name            = ndb.StringProperty(required=True)
-    speaker         = ndb.StringProperty()
+    speaker         = ndb.StringProperty(required=True)
     description     = ndb.StringProperty()
     sessionType     = ndb.StringProperty()
     organizerUserId = ndb.StringProperty()
@@ -136,7 +136,7 @@ class Session(ndb.Model):
 class SessionForm(messages.Message):
     """SessionForm -- Form used for transmittal of session information."""
     name            = messages.StringField(1, required=True)
-    speaker         = messages.StringField(2)
+    speaker         = messages.StringField(2, required=True)
     description     = messages.StringField(3)
     sessionType     = messages.StringField(4)
     organizerUserId = messages.StringField(5)
