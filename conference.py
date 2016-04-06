@@ -610,7 +610,7 @@ class ConferenceApi(remote.Service):
         data = {field.name: getattr(request, field.name) for field in request.all_fields()}
 
         # use the user-provided string to retrieve target conference
-        conf_key = ndb.Key(urlsafe=request.websafeKey)
+        conf_key = ndb.Key(urlsafe = request.websafeKey)
         tg_conf = conf_key.get()
         # check the conference exists
         if not tg_conf:
@@ -649,19 +649,18 @@ class ConferenceApi(remote.Service):
         data['key'] = sess_key
         data['organizerUserId'] = request.organizerUserId = user_id
 
-        # save this info for caching featured speaker
-        websafeConferenceKey = data['websafeKey']
-
         # Remove fields in our form not found in our session model
         del data['websafeKey']
         del data['organizerDisplayName']
 
         # create session, 
-        Session(**data).put()
+        Session(**data).put()        
+
         # start task to determine featured speaker
         taskqueue.add(params={'speaker': data['speaker'],
                               'websafeConferenceKey': request.websafeKey},
-                      url='/tasks/set_featured_speaker')
+                      url='/tasks/set_featured_speaker',
+                      method='POST')
 
         return request
 
@@ -690,7 +689,8 @@ class ConferenceApi(remote.Service):
 
         # create ancestor query for all key matches for this conference
         sess_query = Session.query(
-            ancestor=ndb.Key(Conference, request.websafeConferenceKey))
+            ancestor=ndb.Key(Conference, request.websafeConferenceKey))      
+
         # return set of SessionForm objects per Session
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sess_query]
@@ -874,28 +874,33 @@ class ConferenceApi(remote.Service):
     @staticmethod
     def _cacheFeaturedSpeaker(speaker, websafeConferenceKey):
         """
-        Designate featured speaker & assign to memcache;
-        used by memcache cron job & putAnnouncement().
+        Designate featured speaker & assign to memcache.
         """
-        #_sessions = Session.query(Session.speaker == speaker).fetch()
-        conference_key = ndb.Key(urlsafe=websafeConferenceKey)
-        if not conference_key:
+        speakerSessionsCount = 0
+        speakerListedSessions = []
+
+        # use the user-provided string to retrieve target conference
+        conf = ndb.Key(urlsafe=websafeConferenceKey).get()
+        # check the conference exists
+        if not conf:
             raise endpoints.NotFoundException(
-                'No conference found with given key')
+                'The conference you requested does not exist.')
 
-        # retrieve all children session for given conference
-        # _sessions = Session.query(ancestor=conference_key).fetch()
+        # create ancestor query for all key matches for this conference
+        sessions = Session.query(
+            ancestor=ndb.Key(Conference, websafeConferenceKey)).fetch()
 
-        _sessions = Session.query(Session.speaker == speaker).fetch()
+        # get total sessions our speaker is found in for this conference
+        for session in sessions:
+            if session.speaker == speaker:
+                speakerSessionsCount += 1
+                speakerListedSessions.append(session.name)
 
-        if len(_sessions) > 1:
-            featured_speaker = (SPEAKER_TPL % speaker)
-            featured_speaker += ', '.join(sess.name for sess in _sessions)
-            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, featured_speaker)
-        else:
-            featured_speaker = (memcache.get(MEMCACHE_FEATURED_SPEAKER_KEY) or "")
-
-        return featured_speaker
+        # if speaker has at least two sessions, this new featured speaker
+        if speakerSessionsCount >= 2:
+            featuredSpeaker = SPEAKER_TPL % speaker
+            featuredSpeaker += ', '.join(speakerListedSessions)
+            memcache.set(MEMCACHE_FEATURED_SPEAKER_KEY, featuredSpeaker)
 
 
     @endpoints.method(message_types.VoidMessage, StringMessage,
